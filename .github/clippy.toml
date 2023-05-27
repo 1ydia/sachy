@@ -1,0 +1,12 @@
+[lints]
+[lints.unused_variables]
+deny = true
+
+[lints.non_snake_case]
+warn = true
+
+[lints.unused_imports]
+deny = true
+
+[lints.missing_docs]
+warn = true
