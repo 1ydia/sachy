@@ -79,7 +79,6 @@ mod tests {
 
     #[test]
     fn new_err() {
-        let (sq1, sq2, sq3, sq4) = setup();
         assert!(Square::new(255, 0).is_err());
         assert!(Square::new(0, 255).is_err());
         assert!(Square::new(255, 255).is_err());

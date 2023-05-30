@@ -3,7 +3,7 @@ use std::fmt;
 
 use crate::square::Square;
 
-struct Bitboard {
+pub struct Bitboard {
     bits: u64,
 }
 
@@ -75,7 +75,6 @@ impl TryInto<Square> for Bitboard {
 
 impl fmt::Display for Bitboard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let verbose_mode = f.alternate();
         let mut s = String::new();
         for i in 0..64 {
             if self.bits & (1 << i) != 0 {
