@@ -133,8 +133,8 @@ mod tests {
         let (sq1, sq2, sq3, sq4) = setup();
 
         assert_eq!(Square::from_string("a1").unwrap(), sq1);
-        assert_eq!(Square::from_string("a8").unwrap(), sq2);
-        assert_eq!(Square::from_string("h1").unwrap(), sq3);
+        assert_eq!(Square::from_string("h1").unwrap(), sq2);
+        assert_eq!(Square::from_string("a8").unwrap(), sq3);
         assert_eq!(Square::from_string("h8").unwrap(), sq4);
     }
 
@@ -168,8 +168,8 @@ mod tests {
         let (sq1, sq2, sq3, sq4) = setup();
 
         assert_eq!(format!("{}", sq1), "a1");
-        assert_eq!(format!("{}", sq2), "a8");
-        assert_eq!(format!("{}", sq3), "h1");
+        assert_eq!(format!("{}", sq2), "h1");
+        assert_eq!(format!("{}", sq3), "a8");
         assert_eq!(format!("{}", sq4), "h8");
     }
 }
