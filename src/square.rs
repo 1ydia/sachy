@@ -2,33 +2,30 @@ use std::fmt;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Square {
-    x: u8,
-    y: u8,
+    val: u8,
 }
 
 impl Square {
     pub fn new(x: u8, y: u8) -> Result<Square, &'static str> {
         if x < 8 && y < 8 {
-            Ok(Square { x, y })
+            Ok(Square { val: (x << 4) | y })
         } else {
-            Err("Square out of bounds [0..8]")
+            Err("Square (x, y) out of bounds ([0..8], [0..8])")
         }
     }
 
-    pub fn index(&self) -> u8 { self.y * 8 + self.x }
+    pub fn index(&self) -> u8 { self.y() * 8 + self.x() }
 
-    pub fn x(&self) -> u8 { self.x }
+    pub fn x(&self) -> u8 { (self.val >> 4) & 0b0000_1111 }
 
-    pub fn y(&self) -> u8 { self.y }
+    pub fn y(&self) -> u8 { self.val & 0b0000_1111 }
 }
+
 
 impl Square {
     pub fn from_index(index: u8) -> Result<Square, &'static str> {
         if index < 64 {
-            Ok(Square {
-                x: index % 8,
-                y: index / 8,
-            })
+            Ok(Square::new(index % 8, index / 8).unwrap())
         } else {
             Err("Square index out of bounds [0..64]")
         }
@@ -50,8 +47,8 @@ impl fmt::Display for Square {
         write!(
             f,
             "{}{}",
-            (self.x + 'a' as u8) as char,
-            (self.y + '1' as u8) as char
+            (self.x() + 'a' as u8) as char,
+            (self.y() + '1' as u8) as char
         )
     }
 }
