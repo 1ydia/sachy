@@ -1,5 +1,57 @@
 use std::fmt;
 
+/// Represents an error that can occur when creating a `Square`.
+/// 
+/// The `SquareError` enum is used to represent an error that can occur when
+/// creating a `Square` from an x and y coordinate, or from a string.
+/// 
+/// # Variants
+/// 
+/// - `XYOutOfBounds` - The x or y coordinate is out of bounds. This means that
+/// either the x or y coordinate is greater than 7.
+/// - `IndexOutOfBounds` - The index is out of bounds. This means that the index
+/// is greater than 63.
+/// - `InvalidString` - The string is not a valid square. This means that either
+/// the string is not 2 characters long, the first character is not in the range
+/// 'a' to 'h' or 'A' to 'H', or the second character is not in the range '1' to
+/// '8'.
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// use sachy::square::{Square, SquareError};
+/// 
+/// let sq1 = Square::new(8, 0);
+/// assert!(sq1.is_err());
+/// assert_eq!(sq1.unwrap_err(), SquareError::XYOutOfBounds);
+/// 
+/// let sq2 = Square::new(0, 8);
+/// assert!(sq2.is_err());
+/// assert_eq!(sq2.unwrap_err(), SquareError::XYOutOfBounds);
+/// 
+/// let sq3 = Square::from_index(64);
+/// assert!(sq3.is_err());
+/// assert_eq!(sq3.unwrap_err(), SquareError::IndexOutOfBounds);
+/// 
+/// let sq4 = Square::from_string("a");
+/// assert!(sq4.is_err());
+/// assert_eq!(sq4.unwrap_err(), SquareError::InvalidString);
+/// 
+/// let sq5 = Square::from_string("a9");
+/// assert!(sq5.is_err());
+/// assert_eq!(sq5.unwrap_err(), SquareError::InvalidString);
+/// 
+/// let sq6 = Square::from_string("i1");
+/// assert!(sq6.is_err());
+/// assert_eq!(sq6.unwrap_err(), SquareError::InvalidString);
+/// ```
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+pub enum SquareError {
+    XYOutOfBounds,
+    IndexOutOfBounds,
+    InvalidString,
+}
+
 /// Represents a square on the chess board.
 /// 
 /// The `Square` struct is a 2-dimensional coordinate on the chess board. It
@@ -55,11 +107,11 @@ impl Square {
     /// 0b0000_1111. The two values are then combined with a bitwise OR to
     /// produce the final value, which is stored in the `Square` struct as two
     /// 'nibbles', in one u8.
-    pub fn new(x: u8, y: u8) -> Result<Square, &'static str> {
+    pub fn new(x: u8, y: u8) -> Result<Square, SquareError> {
         if x < 8 && y < 8 {
             Ok(Square { val: (x << 4) | y })
         } else {
-            Err("Square (x, y) out of bounds ([0, 7], [0, 7])")
+            Err(SquareError::XYOutOfBounds)
         }
     }
 
@@ -169,11 +221,11 @@ impl Square {
     /// The x coordinate is calculated as `index % 8` and the y coordinate is
     /// calculated as `index / 8`. This is the reverse of the calculation in
     /// `Square::index()`.
-    pub fn from_index(index: u8) -> Result<Square, &'static str> {
+    pub fn from_index(index: u8) -> Result<Square, SquareError> {
         if index < 64 {
             Square::new(index % 8, index / 8)
         } else {
-            Err("Square index out of bounds [0..64]")
+            Err(SquareError::IndexOutOfBounds)
         }
     }
 
@@ -219,28 +271,26 @@ impl Square {
     /// let square = Square::from_string("a0");
     /// assert!(square.is_err());
     /// ```
-    pub fn from_string(s: &str) -> Result<Square, &'static str> {
+    pub fn from_string(s: &str) -> Result<Square, SquareError> {
         if s.len() != 2 {
-            return Err("Input string must be 2 characters long");
+            return Err(SquareError::InvalidString);
         }
-        
-        let file = s
-            .chars()
-            .nth(0)
-            .ok_or("Input string must be 2 characters long")?
-            .to_ascii_lowercase();
-        let rank = s.chars().nth(1).ok_or("Input string must be 2 characters long")?;
+
+        let mut chars = s.chars();
+
+        let file = chars.nth(0).ok_or(SquareError::InvalidString)?.to_ascii_lowercase();
+        let rank = chars.nth(1).ok_or(SquareError::InvalidString)?;
     
         if file < 'a' || file > 'h' {
-            return Err("First character must be a letter from 'a' to 'h' or 'A' to 'H'");
+            return Err(SquareError::InvalidString);
         }
     
         if !rank.is_ascii_digit() || rank < '1' || rank > '8' {
-            return Err("Second character must be a digit from '1' to '8'");
+            return Err(SquareError::InvalidString);
         }
     
         let file = file as u8 - 'a' as u8;
-        let rank = rank.to_digit(10).ok_or("Failed to parse rank")? as u8 - 1;
+        let rank = rank.to_digit(10).ok_or(SquareError::InvalidString)? as u8 - 1;
         
         Square::new(file, rank)
     }    
@@ -306,13 +356,29 @@ mod tests {
 
     #[test]
     fn new_err() {
-        assert!(Square::new(255, 0).is_err());
-        assert!(Square::new(0, 255).is_err());
-        assert!(Square::new(255, 255).is_err());
+        let sq1 = Square::new(255, 0);
+        assert!(sq1.is_err());
+        assert_eq!(sq1.unwrap_err(), SquareError::XYOutOfBounds);
 
-        assert!(Square::new(8, 0).is_err());
-        assert!(Square::new(0, 8).is_err());
-        assert!(Square::new(8, 8).is_err());
+        let sq2 = Square::new(0, 255);
+        assert!(sq2.is_err());
+        assert_eq!(sq2.unwrap_err(), SquareError::XYOutOfBounds);
+
+        let sq3 = Square::new(255, 255);
+        assert!(sq3.is_err());
+        assert_eq!(sq3.unwrap_err(), SquareError::XYOutOfBounds);
+
+        let sq4 = Square::new(8, 0);
+        assert!(sq4.is_err());
+        assert_eq!(sq4.unwrap_err(), SquareError::XYOutOfBounds);
+
+        let sq5 = Square::new(0, 8);
+        assert!(sq5.is_err());
+        assert_eq!(sq5.unwrap_err(), SquareError::XYOutOfBounds);
+        
+        let sq6 = Square::new(8, 8);
+        assert!(sq6.is_err());
+        assert_eq!(sq6.unwrap_err(), SquareError::XYOutOfBounds);
     }
 
     #[test]
@@ -357,7 +423,9 @@ mod tests {
 
     #[test]
     fn from_index_err() {
-        assert!(Square::from_index(64).is_err());
+        let sq1 = Square::from_index(64);
+        assert!(sq1.is_err());
+        assert_eq!(sq1.unwrap_err(), SquareError::IndexOutOfBounds);
     }
 
     #[test]
@@ -377,20 +445,61 @@ mod tests {
 
     #[test]
     fn from_string_err() {
-        assert!(Square::from_string("a9").is_err());
-        assert!(Square::from_string("i1").is_err());
-        assert!(Square::from_string("a0").is_err());
-        assert!(Square::from_string("h9").is_err());
-        assert!(Square::from_string("i0").is_err());
-        assert!(Square::from_string("i9").is_err());
-        assert!(Square::from_string("a").is_err());
-        assert!(Square::from_string("1").is_err());
-        assert!(Square::from_string("a11").is_err());
-        assert!(Square::from_string("i11").is_err());
-        assert!(Square::from_string("i11").is_err());
-        assert!(Square::from_string("aa").is_err());
-        assert!(Square::from_string("11").is_err());
-        assert!(Square::from_string("aa11").is_err());
+        let sq1 = Square::from_string("a9");
+        assert!(sq1.is_err());
+        assert_eq!(sq1.unwrap_err(), SquareError::InvalidString);
+
+        let sq2 = Square::from_string("i1");
+        assert!(sq2.is_err());
+        assert_eq!(sq2.unwrap_err(), SquareError::InvalidString);
+
+        let sq3 = Square::from_string("a0");
+        assert!(sq3.is_err());
+        assert_eq!(sq3.unwrap_err(), SquareError::InvalidString);
+
+        let sq4 = Square::from_string("h9");
+        assert!(sq4.is_err());
+        assert_eq!(sq4.unwrap_err(), SquareError::InvalidString);
+
+        let sq5 = Square::from_string("i0");
+        assert!(sq5.is_err());
+        assert_eq!(sq5.unwrap_err(), SquareError::InvalidString);
+
+        let sq6 = Square::from_string("i9");
+        assert!(sq6.is_err());
+        assert_eq!(sq6.unwrap_err(), SquareError::InvalidString);
+
+        let sq7 = Square::from_string("a");
+        assert!(sq7.is_err());
+        assert_eq!(sq7.unwrap_err(), SquareError::InvalidString);
+
+        let sq8 = Square::from_string("1");
+        assert!(sq8.is_err());
+        assert_eq!(sq8.unwrap_err(), SquareError::InvalidString);
+
+        let sq9 = Square::from_string("a11");
+        assert!(sq9.is_err());
+        assert_eq!(sq9.unwrap_err(), SquareError::InvalidString);
+
+        let sq10 = Square::from_string("i11");
+        assert!(sq10.is_err());
+        assert_eq!(sq10.unwrap_err(), SquareError::InvalidString);
+
+        let sq11 = Square::from_string("i11");
+        assert!(sq11.is_err());
+        assert_eq!(sq11.unwrap_err(), SquareError::InvalidString);
+
+        let sq12 = Square::from_string("aa");
+        assert!(sq12.is_err());
+        assert_eq!(sq12.unwrap_err(), SquareError::InvalidString);
+
+        let sq13 = Square::from_string("11");
+        assert!(sq13.is_err());
+        assert_eq!(sq13.unwrap_err(), SquareError::InvalidString);
+
+        let sq14 = Square::from_string("aa11");
+        assert!(sq14.is_err());
+        assert_eq!(sq14.unwrap_err(), SquareError::InvalidString);
     }
 
     #[test]
