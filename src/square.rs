@@ -1,17 +1,17 @@
-use std::ops::{PartialEq};
 use std::fmt;
 
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Square {
     x: u8,
     y: u8,
 }
 
 impl Square {
-    pub fn new(x: u8, y: u8) -> Result<Square, String> {
+    pub fn new(x: u8, y: u8) -> Result<Square, &'static str> {
         if x < 8 && y < 8 {
             Ok(Square { x, y })
         } else {
-            Err(format!("Square ({}, {}) out of bounds ([0..8], [0..8])", x, y))
+            Err("Square out of bounds [0..8]")
         }
     }
 
@@ -23,36 +23,25 @@ impl Square {
 }
 
 impl Square {
-    pub fn from_index(index: u8) -> Result<Square, String> {
+    pub fn from_index(index: u8) -> Result<Square, &'static str> {
         if index < 64 {
             Ok(Square {
                 x: index % 8,
                 y: index / 8,
             })
         } else {
-            Err(
-                format!(
-                    "Invalid square index: {} out of bounds [0..64]",
-                    index
-                )
-            )
+            Err("Square index out of bounds [0..64]")
         }
     }
 
-    pub fn from_string(s: &str) -> Result<Square, String> {
+    pub fn from_string(s: &str) -> Result<Square, &'static str> {
         if s.len() != 2 {
-            return Err(format!("Square string '{}' not of length 2", s));
+            return Err("Square must be 2 characters long");
         }
         let mut chars = s.chars();
         let x = chars.next().unwrap() as u8 - 'a' as u8;
         let y = chars.next().unwrap() as u8 - '1' as u8;
         Square::new(x, y)
-    }
-}
-
-impl PartialEq for Square {
-    fn eq(&self, other: &Square) -> bool {
-        self.x == other.x && self.y == other.y
     }
 }
 
@@ -71,21 +60,26 @@ impl fmt::Display for Square {
 mod tests {
     use super::*;
 
-    #[test] 
-    fn setup() {
-        let sq1 = Square::new(0, 0);
-        let sq2 = Square::new(7, 0);
-        let sq3 = Square::new(0, 7);
-        let sq4 = Square::new(7, 7);
+    fn setup() -> (Square, Square, Square, Square) {
+        let sq1 = Square::new(0, 0).unwrap();
+        let sq2 = Square::new(7, 0).unwrap();
+        let sq3 = Square::new(0, 7).unwrap();
+        let sq4 = Square::new(7, 7).unwrap();
+
+        (sq1, sq2, sq3, sq4)
     }
 
     #[test]
-    fn new() {
-        assert!(sq1.is_ok());
-        assert!(sq2.is_ok());
-        assert!(sq3.is_ok());
-        assert!(sq4.is_ok());
+    fn new_ok() {
+        assert!(Square::new(0, 0).is_ok());
+        assert!(Square::new(7, 0).is_ok());
+        assert!(Square::new(0, 7).is_ok());
+        assert!(Square::new(7, 7).is_ok());
+    }
 
+    #[test]
+    fn new_err() {
+        let (sq1, sq2, sq3, sq4) = setup();
         assert!(Square::new(255, 0).is_err());
         assert!(Square::new(0, 255).is_err());
         assert!(Square::new(255, 255).is_err());
@@ -97,46 +91,58 @@ mod tests {
 
     #[test]
     fn index() {
-        assert_eq!(sq1.unwrap().index(), 0);
-        assert_eq!(sq2.unwrap().index(), 7);
-        assert_eq!(sq3.unwrap().index(), 56);
-        assert_eq!(sq4.unwrap().index(), 63);
+        let (sq1, sq2, sq3, sq4) = setup();
+
+        assert_eq!(sq1.index(), 0);
+        assert_eq!(sq2.index(), 7);
+        assert_eq!(sq3.index(), 56);
+        assert_eq!(sq4.index(), 63);
     }
 
     #[test]
     fn x() {
-        assert_eq!(sq1.unwrap().x(), 0);
-        assert_eq!(sq2.unwrap().x(), 7);
-        assert_eq!(sq3.unwrap().x(), 0);
-        assert_eq!(sq4.unwrap().x(), 7);
+        let (sq1, sq2, sq3, sq4) = setup();
+
+        assert_eq!(sq1.x(), 0);
+        assert_eq!(sq2.x(), 7);
+        assert_eq!(sq3.x(), 0);
+        assert_eq!(sq4.x(), 7);
     }
 
     #[test]
     fn y() {
-        assert_eq!(sq1.unwrap().y(), 0);
-        assert_eq!(sq2.unwrap().y(), 0);
-        assert_eq!(sq3.unwrap().y(), 7);
-        assert_eq!(sq4.unwrap().y(), 7);
+        let (sq1, sq2, sq3, sq4) = setup();
+
+        assert_eq!(sq1.y(), 0);
+        assert_eq!(sq2.y(), 0);
+        assert_eq!(sq3.y(), 7);
+        assert_eq!(sq4.y(), 7);
     }
 
     #[test]
     fn from_index() {
-        assert_eq!(Square::from_index(0), sq1);
-        assert_eq!(Square::from_index(7), sq2);
-        assert_eq!(Square::from_index(56), sq3);
-        assert_eq!(Square::from_index(63), sq4);
+        let (sq1, sq2, sq3, sq4) = setup();
+
+        assert_eq!(Square::from_index(0).unwrap(), sq1);
+        assert_eq!(Square::from_index(7).unwrap(), sq2);
+        assert_eq!(Square::from_index(56).unwrap(), sq3);
+        assert_eq!(Square::from_index(63).unwrap(), sq4);
     }
 
     #[test]
     fn from_string() {
-        assert_eq!(Square::from_string("a1"), sq1);
-        assert_eq!(Square::from_string("a8"), sq2);
-        assert_eq!(Square::from_string("h1"), sq3);
-        assert_eq!(Square::from_string("h8"), sq4);
+        let (sq1, sq2, sq3, sq4) = setup();
+
+        assert_eq!(Square::from_string("a1").unwrap(), sq1);
+        assert_eq!(Square::from_string("a8").unwrap(), sq2);
+        assert_eq!(Square::from_string("h1").unwrap(), sq3);
+        assert_eq!(Square::from_string("h8").unwrap(), sq4);
     }
 
     #[test]
     fn eq() {
+        let (sq1, sq2, sq3, sq4) = setup();
+
         assert_eq!(sq1, sq1);
         assert_ne!(sq1, sq2);
         assert_ne!(sq1, sq3);
@@ -160,6 +166,8 @@ mod tests {
 
     #[test]
     fn display() {
+        let (sq1, sq2, sq3, sq4) = setup();
+
         assert_eq!(format!("{}", sq1), "a1");
         assert_eq!(format!("{}", sq2), "a8");
         assert_eq!(format!("{}", sq3), "h1");
